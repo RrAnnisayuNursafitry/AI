@@ -1,0 +1,668 @@
+package com.example.fuzzyapp
+
+import android.content.Intent
+import android.os.Build
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import com.example.fuzzyapp.databinding.ActivityMainBinding
+import com.google.android.material.snackbar.Snackbar
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var binding : ActivityMainBinding
+
+    /*
+         Variabel merupakan tempat untuk menampung data
+         ada 2 tipe variabel di kotlin ada var, val
+         val merupakan variabel yang isinya tidak bisa dirubah
+         var merupakan variabel yang isinya  bisa dirubah
+     */
+
+    private var penilaian = 0.0
+    private var penjualan = 0.0
+
+    // FuzzyFication
+    /*
+        array merupakan tipe data yang diguanakn untuk menampung sekumpulan data
+        String merupakan tipe data text atau tulisan ""
+        Double merupakan tipe utk bilangan pecahan
+        Int merupakan tipe data utk bilangan bulat
+     */
+
+    var result_penilaian :Array<Double> = arrayOf()
+    var DK_Penilaian :Array<String> = arrayOf()
+
+    /*
+        fun merupakan kata kunci untuk deklarasi function
+        function merupakan sebuah blok kode untuk menampung sekumpulan kode yang bisa digunakan dimanapun
+        return itu berfungsi utk mengembalikan nilai
+     */
+    fun rumus_pertama(x: Double,c :Double, d : Double):Double{
+        val hitung = -(x-d)/(d-c)
+        return hitung
+    }
+    fun rumus_kedua(x: Double,a :Double, b : Double):Double{
+        val hitung = (x-a)/(b-a)
+        return hitung
+    }
+
+    var result_penjualan :Array<Double> = arrayOf()
+    var DK_Penjualan :Array<String> = arrayOf()
+
+    //Inference
+    var number_inference : Array<Double> = arrayOf()        
+    var DK_inference : Array<String> = arrayOf()
+    var key : Int = 0
+    var success : Boolean = false
+
+    var number_disjuction : Array<Double> = arrayOf()
+    var DK_disjuction : Array<String> = arrayOf()
+
+    // DefuzziFication
+    val range_kurang = Array<Int>(5){it*9}
+    val range_kb = Array<Int>(5){it*5+45}
+    val range_baik = Array<Int>(5){it*4+65}
+    val range_sb = Array<Int>(5){it*5+80}
+    var final_result = 0.0
+    var string_result = ""
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        hitung()
+        currentDate()
+    }
+
+
+    private fun currentDate(){
+        val calendar = Calendar.getInstance()
+        val dateFormat = SimpleDateFormat("EEE , d MMM , yyyy");
+        val date = dateFormat.format(calendar.getTime());
+        binding.tvDate.text = date
+
+    }
+    private fun Fuzzification(){
+
+        when{
+            penilaian < 0.0-> {
+                result_penilaian += 0.0
+            }
+            penilaian in 0.0..45.0 -> {
+                DK_Penilaian +="Buruk"
+                result_penilaian += 1.0
+            }
+            penilaian in 46.0..49.0 ->{
+                val a = 45.0
+                val b = 50.0
+                DK_Penilaian += "Buruk"
+                DK_Penilaian += "Cukup"
+                result_penilaian += rumus_pertama(penilaian,a,b)
+                result_penilaian += rumus_kedua(penilaian,a,b)
+
+            }
+            penilaian in 50.0..60.0 -> {
+                DK_Penilaian +="Cukup"
+                result_penilaian += 1.0;
+            }
+            penilaian in 61.0..64.0 -> {
+                val a = 60.0
+                val b = 65.0
+                DK_Penilaian += "Cukup"
+                DK_Penilaian += "Baik"
+                result_penilaian += rumus_pertama(penilaian,a,b)
+                result_penilaian += rumus_kedua(penilaian,a,b)
+            };
+            penilaian in 65.0..75.0 -> {
+                DK_Penilaian +="Baik"
+                result_penilaian += 1.0;
+            }
+            penilaian in 76.0..80.0 ->{
+                val a = 75.0
+                val b = 81.0
+                DK_Penilaian += "Baik"
+                DK_Penilaian += "Sangat Baik"
+                result_penilaian += rumus_pertama(penilaian,a,b)
+                result_penilaian += rumus_kedua(penilaian,a,b)
+            }
+            penilaian in 81.0..100.0 -> {
+                DK_Penilaian += "Sangat Baik"
+                result_penilaian += 1.0;
+            }
+            penilaian > 100.0 -> {
+                result_penilaian += 0.0
+            }
+        }
+        
+        when{
+            penjualan < 0.0 -> result_penilaian += 0.0 ;
+            penjualan in 0.0..300.0 -> {
+                DK_Penjualan +="Sedikit"
+                result_penjualan += 1.0
+            }
+            penjualan in 301.0..399.0 ->{
+                val a = 300.0
+                val b = 400.0
+                DK_Penjualan += "Sedikit"
+                DK_Penjualan += "Sedang"
+                result_penjualan += rumus_pertama(penjualan,a,b)
+                result_penjualan += rumus_kedua(penjualan,a,b)
+
+            }
+            penjualan in 400.0..900.0 -> {
+                DK_Penjualan +="Sedang"
+                result_penjualan += 1.0;
+            }
+            penjualan in 901.0..1199.0 -> {
+                val a = 900.0
+                val b = 1200.0
+                DK_Penjualan += "Sedang"
+                DK_Penjualan += "Banyak"
+                result_penjualan += rumus_pertama(penjualan,a,b)
+                result_penjualan += rumus_kedua(penjualan,a,b)
+            };
+            penjualan in 1200.0..1500.0 -> {
+                DK_Penjualan +="Banyak"
+                result_penjualan += 1.0;
+            }
+            penjualan > 1501.0 -> {
+                result_penjualan += 0.0
+            }
+        }
+
+
+
+    }
+
+    fun disjunction(arr : Array<String>){
+        var tempo : Array<Int> = arrayOf()
+        var tempo2 : Array<Int> = arrayOf()
+        var tempo3 : Array<Double> = arrayOf()
+        var tempo4 : Array<Int> = arrayOf()
+        var tempo5 : Array<Int> = arrayOf()
+
+        // Mengecek nama yang sama pada array, jika ada dikelompokkan dan masukkan index tsb ke dalam array baru
+        for(i in DK_inference.indices){
+            if(DK_inference[0] == DK_inference[i]){
+                tempo += i
+            }else{
+                tempo2 += i
+            }
+        }
+
+        for(j in tempo2){
+            val a = tempo2[0]
+            if(DK_inference[a] == DK_inference[j]){
+                tempo4 += j
+            }else{
+                tempo5 += j
+            }
+        }
+
+
+        println(tempo.toList())
+        println(tempo2.toList())
+
+        var result : Array<Double> = arrayOf()
+        var result2 : Array<Double> = arrayOf()
+        // Pengecekan Index, ambil index dgn nilai terbesar masukkan ke dalam variabel tempo3
+        if(tempo5.isNotEmpty()){
+            println(tempo.toList())
+            println(tempo4.toList())
+            println(tempo5.toList())
+            // Clear
+            if(tempo.size == 2){
+                // Ambil Nilai string dari index terbesar
+                if(tempo[0] > tempo[1]){
+                    val a = tempo[0]
+                    DK_disjuction += DK_inference[a]
+                }else{
+                    val a = tempo[1]
+                    DK_disjuction += DK_inference[a]
+                }
+
+
+                // Ambil nilai integer dari index terbesar
+                for(i in tempo4){
+                    result += number_inference[i]
+                }
+                tempo3 += result.toList().sortedDescending().first()
+
+                for(i in tempo4){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+                for(i in tempo5){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+
+
+            }else if(tempo4.size == 2){
+                if(tempo4[0] > tempo4[1]){
+                    val a = tempo4[0]
+                    DK_disjuction += DK_inference[a]
+                }else{
+                    val a = tempo4[1]
+                    DK_disjuction += DK_inference[a]
+                }
+                for(i in tempo4){
+                    result += number_inference[i]
+                }
+                tempo3 += result.toList().sortedDescending().first()
+                for(i in tempo){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+                for(i in tempo5){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+
+            }else if(tempo5.size == 2){
+                if(tempo5[0] > tempo5[1]){
+                    val a = tempo5[0]
+                    DK_disjuction += DK_inference[a]
+                }else{
+                    val a = tempo5[1]
+                    DK_disjuction += DK_inference[a]
+                }
+                for(i in tempo5){
+                    result += number_inference[i]
+                }
+                tempo3 += result.toList().sortedDescending().first()
+                for(i in tempo){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+                for(i in tempo4){
+                    tempo3 += number_inference[i]
+                    DK_disjuction += DK_inference[i]
+                }
+
+            }else{
+                println("error")
+            }
+
+
+        }else if(tempo.size == 2 && tempo2.size == 2){
+            for(i in tempo){
+                result += number_inference[i]
+            }
+            tempo3 += result.toList().sortedDescending().first()
+            result = arrayOf()
+
+            if(tempo[0] > tempo[1]){
+                val a = tempo[0]
+                DK_disjuction += DK_inference[a]
+            }else{
+                val a = tempo[0]
+                DK_disjuction += DK_inference[a]
+            }
+
+            if(tempo2[0] > tempo2[1]){
+                val a = tempo2[0]
+                DK_disjuction += DK_inference[a]
+            }else{
+                val a = tempo2[0]
+                DK_disjuction += DK_inference[a]
+            }
+
+//            for(i in tempo3){
+//                DK_disjuction += DK_inference[i.toInt()]
+//            }
+
+            for(i in tempo2){
+                result += number_inference[i]
+            }
+
+            result2 += result.toList().sortedDescending().first()
+
+            for(i in result2){
+//                DK_disjuction += DK_inference[i.toInt()]
+                tempo3 += i
+            }
+
+        }else if(tempo.size == 3 && tempo2.size == 1){
+            for(i in tempo){
+                result += number_inference[i]
+            }
+            tempo3 += result.toList().sortedDescending().first()
+
+            // Ambil nilai string dari tempo3
+            for(i in tempo3){
+                DK_disjuction += DK_inference[i.toInt()]
+            }
+
+            for(i in tempo2){
+                DK_disjuction += DK_inference[i]
+                tempo3 += number_inference[i]
+
+            }
+
+        }else if(tempo.size == 1 && tempo2.size == 3){
+            for(i in tempo2){
+                result += number_inference[i]
+
+            }
+            tempo3 += result.toList().sortedDescending().first()
+
+            // Ambil nilai string dari tempo3
+            for(i in tempo3){
+                DK_disjuction += DK_inference[i.toInt()]
+            }
+
+            for(i in tempo){
+                DK_disjuction += DK_inference[i]
+                tempo3 += number_inference[i]
+
+            }
+        }else{
+            println("Ups Ada data yang tidak terduga")
+        }
+
+
+
+        number_disjuction += tempo3
+
+        println(number_disjuction.toList())
+        println(DK_disjuction.toList())
+    }
+
+    private fun Inference(){
+        if(penilaian < 0.0 || penjualan < 0.0){
+            Toast.makeText(this, "Data tidak valid 1", Toast.LENGTH_SHORT).show()
+            println("Data Tidak Valid 1")
+        }else{
+            if(penilaian >= 101.0 || penjualan >= 1501.0){
+//                Toast.makeText(this, "Data tidak valid 2", Toast.LENGTH_SHORT).show()
+                println("Data Tidak Valid 2")
+            }else{
+                // conjungsion
+                if(DK_Penilaian.isNotEmpty() && DK_Penjualan.isNotEmpty()){
+                    for(i in result_penilaian){
+                        for(j in result_penjualan){
+                            if(i <= j ){
+                                number_inference += i
+                            }else{
+                                number_inference += j
+                            }
+                        }
+                    }
+                    success = true
+                }else{
+//                    Toast.makeText(this, "Data tidak valid 3", Toast.LENGTH_SHORT).show()
+                    println("Data Tidak Valid 3")
+                }
+            }
+        }
+
+        for(i in DK_Penilaian){
+            for(j in DK_Penjualan){
+                if(i == "Sangat Baik" && j == "Banyak"){
+                    DK_inference += "Sangat Baik"
+                } else if(i == "Sangat Baik" && j == "Sedang"){
+                    DK_inference += "Baik"
+                }else if(i == "Sangat Baik" && j == "Sedikit"){
+                    DK_inference += "Kurang Baik"
+                }else if(i == "Baik" && j == "Banyak"){
+                    DK_inference += "Sangat Baik"
+                }else if(i == "Baik" && j == "Sedang"){
+                    DK_inference += "Baik"
+                }else if(i == "Baik" && j == "Sedikit"){
+                    DK_inference += "Kurang Baik"
+                }else if(i == "Cukup" && j == "Banyak"){
+                    DK_inference += "Baik"
+                }else if(i == "Cukup" && j == "Sedang"){
+                    DK_inference += "Kurang Baik"
+                }else if(i == "Cukup" && j == "Sedikit"){
+                    DK_inference += "Kurang"
+                }else if(i == "Buruk" && j == "Banyak"){
+                    DK_inference += "Kurang Baik"
+                }else if(i == "Buruk" && j == "Sedang"){
+                    DK_inference += "Kurang Baik"
+                }else if(i == "Buruk" && j == "Sedikit"){
+                    DK_inference += "Kurang"
+                }else{
+                    Toast.makeText(this, "Data tidak tersedia", Toast.LENGTH_SHORT).show()
+                    println("Data tidak tersedia")
+                }
+            }
+        }
+
+        var cek = 0
+
+        if(DK_inference.size > 2){
+            for(i in DK_inference.indices){
+                for(j in 1..DK_inference.size-1){
+                    // Pengecekan apakah ada nama yang sama pada suatu array
+                    if(DK_inference[i] == DK_inference[j] || DK_inference[0] == DK_inference[j]){
+                        key = 1
+                    }
+                }
+            }
+        }else if(DK_inference.size == 2){
+            if(DK_inference[0] == DK_inference[1]){
+                cek = 1
+            }
+        }else{
+            println("Lempar Defuzzi karena key = 0")
+        }
+
+        // Jika ada nama yang sama menjalankan disjunction
+
+        if(key == 1){
+            disjunction(DK_inference)
+        }else if(cek == 1){
+            DK_disjuction += DK_inference[0]
+            if(number_inference[0] > number_inference[1]){
+                number_disjuction += number_inference[0]
+            }else{
+                number_disjuction += number_inference[1]
+            }
+        }
+        else{
+            for(i in number_inference){
+                number_disjuction += i
+            }
+            for(i in DK_inference){
+                DK_disjuction += i
+            }
+        }
+
+    }
+    private fun Defuzzification(){
+        if(DK_disjuction.isNotEmpty()){
+            if(DK_disjuction.size == 4){
+                if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang Baik" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang Baik" && DK_disjuction[3] == "Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2]) + (range_baik.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Kurang Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_kb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Kurang"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_kurang.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Kurang" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Sangat Baik" && DK_disjuction[3] == "Kurang"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2]) + (range_kurang.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Kurang" && DK_disjuction[3] == "Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2]) + (range_baik.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Kurang"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_kurang.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Kurang Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_kb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Kurang"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_kurang.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Baik" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Kurang Baik" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Kurang" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang" && DK_disjuction[3] == "Sangat Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2]) + (range_sb.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang" && DK_disjuction[3] == "Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2]) + (range_baik.sum() * number_disjuction[3])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ) + ( number_disjuction[3] * 5 ))
+                }else{
+                    println("Terjadi Kesalahan 1")
+                }
+
+            }else if(DK_disjuction.size == 3){
+                if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_kurang.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_kb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Sangat Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_sb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Sangat Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_baik.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kurang.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik" && DK_disjuction[2] == "Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])+ (range_baik.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Baik" && DK_disjuction[2] == "Kurang Baik"){
+                    final_result = ( (range_sb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])+ (range_kb.sum() * number_disjuction[2])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5) + ( number_disjuction[2] * 5 ))
+                }else{
+                    println("Terjadi Kesalahan 2")
+                }
+
+
+            }else if(DK_disjuction.size == 2){
+                if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Kurang Baik"){
+                    final_result =  ( (range_kurang.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Baik"){
+                    final_result =  ( (range_kurang.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Kurang" && DK_disjuction[1] == "Sangat Baik"){
+                    final_result =  ( (range_kurang.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Kurang"){
+                    final_result =  ( (range_kb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Baik"){
+                    final_result =  ( (range_kb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Kurang Baik" && DK_disjuction[1] == "Sangat Baik"){
+                    final_result =  ( (range_kb.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang"){
+                    final_result =  ( (range_baik.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Kurang Baik"){
+                    final_result =  ( (range_baik.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Baik" && DK_disjuction[1] == "Sangat Baik"){
+                    final_result =  ( (range_baik.sum() * number_disjuction[0] ) + (range_sb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang"){
+                    final_result =  ( (range_sb.sum() * number_disjuction[0] ) + (range_kurang.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Kurang Baik"){
+                    final_result =  ( (range_sb.sum() * number_disjuction[0] ) + (range_kb.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else if(DK_disjuction[0] == "Sangat Baik" && DK_disjuction[1] == "Baik"){
+                    final_result =  ( (range_sb.sum() * number_disjuction[0] ) + (range_baik.sum() * number_disjuction[1])) / (( number_disjuction[0] * 5 ) + (number_disjuction[1] *5))
+                }else{
+                    println("Terjadi Kesalahan 3")
+                }
+
+            }else{
+                if(DK_disjuction[0] == "Kurang"){
+                    final_result =   (range_kurang.sum() * number_disjuction[0] ) / ( number_disjuction[0] * 5 )
+                }else if(DK_disjuction[0] == "Kurang Baik"){
+                    final_result =   (range_kb.sum() * number_disjuction[0] ) / ( number_disjuction[0] * 5 )
+                }else if(DK_disjuction[0] == "Baik"){
+                    final_result =   (range_baik.sum() * number_disjuction[0] ) / ( number_disjuction[0] * 5 )
+                }else if(DK_disjuction[0] == "Sangat Baik"){
+                    final_result =   (range_sb.sum() * number_disjuction[0] ) / ( number_disjuction[0] * 5 )
+                }else{
+                    println("Terjadi Kesalahan 4")
+                }
+            }
+        }
+
+
+
+        if(success == true){
+            if(final_result.toInt() in 0..45){
+                string_result = "Kurang"
+            }else if(final_result.toInt() in 46..60){
+                string_result = "Kurang Baik"
+            }else if(final_result.toInt() in 61..80){
+                string_result = "Baik"
+            }else if(final_result.toInt() in 81..100){
+                string_result = "Sangat Baik"
+            }else{
+                string_result = "Data tidak valid"
+            }
+        }else{
+           string_result = "Data tidak valid"
+        }
+
+    }
+
+    private fun hitung(){
+        binding.btnHitung.setOnClickListener {
+            if(binding.etPenilaian.text!!.isNotBlank() && binding.etPenjualan.text!!.isNotBlank()){
+                penilaian = binding.etPenilaian.text.toString().toDouble()
+                penjualan = binding.etPenjualan.text.toString().toDouble()
+                Fuzzification()
+                Inference()
+                Defuzzification()
+                if(string_result != "Data tidak valid"){
+                    startActivity(Intent(this, ActivityHasil::class.java).also {
+                        Toast.makeText(this, "$final_result", Toast.LENGTH_SHORT).show()
+                        it.putExtra("result", string_result)
+                        it.putExtra("result_penilaian", result_penilaian)
+                        it.putExtra("DK_Penilaian", DK_Penilaian)
+                        it.putExtra("result_penjualan", result_penjualan)
+                        it.putExtra("DK_Penjualan", DK_Penjualan)
+                        it.putExtra("number_inference", number_inference)
+                        it.putExtra("dk_inference", DK_inference)
+                        it.putExtra("number_disjunction", number_disjuction)
+                        it.putExtra("dk_disjunction", DK_disjuction)
+                    })
+                }else{
+                    Toast.makeText(this, "Data tidak valid", Toast.LENGTH_SHORT).show()
+                }
+
+            }else{
+                Toast.makeText(this, "Data tidak boleh kosong", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
